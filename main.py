@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import psycopg2
 import bcrypt
 import os
+import random
 
 load_dotenv()
 
@@ -48,7 +49,14 @@ class user(BaseModel):
     email: str
     dni: str
     password: str
+    confirm_password: str
 
+class UserResponse(BaseModel):
+    id: int
+    status: str
+    numero_cuenta: str
+
+#Validar si la contraseña es la misma que la confirmación de la contraseña
 @app.post("/register")
 async def register_user(user: user):
     if user.password != user.confirm_password:
@@ -59,15 +67,21 @@ async def register_user(user: user):
     connection = get_db_connection()
     cursor = connection.cursor()
 
+    serie_fija = "123"  # Serie fija de 3 dígitos
+    digitos_aleatorios = ''.join([str(random.randint(0, 9)) for _ in range(6)])  # 6 dígitos aleatorios
+    numero_cuenta = serie_fija + digitos_aleatorios
+
     insert_sql = """
     INSERT INTO usuarios (full_name, email, password, dni, numero_cuenta) VALUES (%s, %s, %s, %s, %s)
     RETURNING id;
     """
     
     try:
-        cursor.execute(insert_sql, (user.fullname, user.email, user.password, user.dni))
+        cursor.execute(insert_sql, (user.fullname, user.email,hashed_password, user.password, user.dni, numero_cuenta)) 
         user_id = cursor.fetchone()[0]
         connection.commit()
+        return {"id": user_id, "status": "Usuario registrado exitosamente", "numero_cuenta": numero_cuenta}
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     finally:
