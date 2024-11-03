@@ -19,32 +19,31 @@ def get_db_connection():
         user=os.getenv("user"),
         password=os.getenv("password")
     )
-connection = get_db_connection()
-cursor = connection.cursor()
 
-# Comando SQL para crear la tabla
-create_table_sql = """
-CREATE TABLE IF NOT EXISTS usuarios (
-    id SERIAL PRIMARY KEY,
-    full_name TEXT NOT NULL,
-    email varchar(250),
-    password text,
-    dni text,
-    numero_cuenta text,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-"""
-cursor.execute(create_table_sql)
-connection.commit()
+# Crea la tabla al inicio
+def create_table():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        full_name TEXT NOT NULL,
+        email varchar(250),
+        password text,
+        dni text,
+        numero_cuenta text,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    """
+    cursor.execute(create_table_sql)
+    connection.commit()
+    cursor.close()
+    connection.close()
+    print("Tabla creada con éxito")
 
-print("Tabla creada con éxito")
+create_table()
 
-# Cierra la conexión
-cursor.close()
-connection.close()
-
-@app.get("/")
-class user(BaseModel):
+class User(BaseModel):
     fullname: str
     email: str
     dni: str
@@ -56,9 +55,9 @@ class UserResponse(BaseModel):
     status: str
     numero_cuenta: str
 
-#Validar si la contraseña es la misma que la confirmación de la contraseña
+# Validar si la contraseña es la misma que la confirmación de la contraseña
 @app.post("/register")
-async def register_user(user: user):
+async def register_user(user: User):
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Las contraseñas no coinciden.")
     
@@ -77,7 +76,7 @@ async def register_user(user: user):
     """
     
     try:
-        cursor.execute(insert_sql, (user.fullname, user.email,hashed_password, user.password, user.dni, numero_cuenta)) 
+        cursor.execute(insert_sql, (user.fullname, user.email, hashed_password.decode('utf-8'), user.dni, numero_cuenta)) 
         user_id = cursor.fetchone()[0]
         connection.commit()
         return {"id": user_id, "status": "Usuario registrado exitosamente", "numero_cuenta": numero_cuenta}
