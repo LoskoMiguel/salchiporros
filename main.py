@@ -134,7 +134,7 @@ async def login_user(login: login):
     if not bcrypt.checkpw(login.password.encode('utf-8'), stored_hashed_password.encode('utf-8')):
         raise HTTPException(status_code=400, detail="DNI o contraseña incorrectos.")
 
-    return {"status": "Login exitoso", "user_id": user_id}
+    return {"msg": "Login exitoso", "token": token}
 
 @app.post("/transferencias")
 async def transfer_funds(transferencias: transferencias):
