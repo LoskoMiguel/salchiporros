@@ -12,3 +12,6 @@ class user(BaseModel):
     password: str
     confirm_password: str
 
+@app.post("/register")
+def register(user: user):
+    return user
