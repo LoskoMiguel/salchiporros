@@ -13,11 +13,11 @@ app = FastAPI()
 # Conexión a la base de datos de Supabase
 def get_db_connection():
     return psycopg2.connect(
-        host=os.getenv("host"),
-        port=os.getenv("port"),
-        dbname=os.getenv("dbname"),
-        user=os.getenv("user"),
-        password=os.getenv("password")
+        host=os.getenv("HOST"),
+        port=os.getenv("DBPORT"),
+        dbname=os.getenv("DBNAME"),
+        user=os.getenv("USER"),
+        password=os.getenv("PASSWORD")
     )
 
 # Crea la tabla al inicio
@@ -66,7 +66,21 @@ async def register_user(user: User):
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    serie_fija = "123"  # Serie fija de 3 dígitos
+    cursor.execute("SELECT id FROM usuarios WHERE email = %s", (user.email,))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="El correo ya está registrado.")
+
+
+    cursor.execute("SELECT id FROM usuarios WHERE dni = %s", (user.dni,))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="El DNI ya está registrado.")
+
+
+    cursor.execute("SELECT id FROM usuarios WHERE numero_cuenta = %s", (numero_cuenta,))
+    if not cursor.fetchone():
+        raise HTTPException(status_code=400, detail="El número de cuenta ya está registrado.")
+
+    serie_fija = "009"  # Serie fija de 3 dígitos
     digitos_aleatorios = ''.join([str(random.randint(0, 9)) for _ in range(6)])  # 6 dígitos aleatorios
     numero_cuenta = serie_fija + digitos_aleatorios
 
@@ -86,3 +100,7 @@ async def register_user(user: User):
     finally:
         cursor.close()
         connection.close()
+
+# if __name__ == "__main__":
+# import uvicorn
+# uvicorn.run(app, host="0.0.0.0", port=os.getenv("PORT"))
