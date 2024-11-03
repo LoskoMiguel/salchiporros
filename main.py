@@ -86,7 +86,6 @@ async def register_user(user: User):
     if cursor.fetchone():
         raise HTTPException(status_code=400, detail="El correo ya está registrado.")
 
-
     cursor.execute("SELECT dni FROM usuarios WHERE dni = %s", (user.dni,))
     if cursor.fetchone():
         raise HTTPException(status_code=400, detail="El DNI ya está registrado.")
